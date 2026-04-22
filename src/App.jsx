@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 // ─── OWNER CONFIG ─────────────────────────────────────────────────────────────
-const OWNER_API_KEY = "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";
+const OWNER_API_KEY = "ANTHROPIC_API_KEY";
 const STRIPE_MONTHLY_LINK = "https://buy.stripe.com/test_4gM00jdQH7Hcch43N5gMw01";
 const STRIPE_YEARLY_LINK  ="https://buy.stripe.com/test_6oU00jh2T9Pkgxk1EXgMw00";
 // Google OAuth — get from console.cloud.google.com → Create project → OAuth 2.0 Client ID
