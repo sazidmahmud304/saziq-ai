@@ -2,10 +2,10 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 // ─── OWNER CONFIG ─────────────────────────────────────────────────────────────
 const OWNER_API_KEY = "ANTHROPIC_API_KEY";
-const STRIPE_MONTHLY_LINK = "https://buy.stripe.com/YOUR_MONTHLY_LINK";
-const STRIPE_YEARLY_LINK  = "https://buy.stripe.com/YOUR_YEARLY_LINK";
+const STRIPE_MONTHLY_LINK = "https://buy.stripe.com/test_4gM00jdQH7Hcch43N5gMw01";
+const STRIPE_YEARLY_LINK  = "https://buy.stripe.com/test_6oU00jh2T9Pkgxk1EXgMw00";
 // Google OAuth — get from console.cloud.google.com → Create project → OAuth 2.0 Client ID
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "981626946613-aqr3v8biat79q4r1qcf5u46hqis2didn.apps.googleusercontent.com";
 const BRAND = "SazIQ";
 const FREE_LIMIT = 5;
 
