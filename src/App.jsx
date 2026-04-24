@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 
 // ─── OWNER CONFIG ─────────────────────────────────────────────────────────────
-const OWNER_API_KEY = "ANTHROPIC_API_KEY";
+const OWNER_API_KEY = "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";
 // Razorpay — Indian payment gateway (supports UPI, Paytm, cards, net banking)
 // Get your Key ID from: razorpay.com → Settings → API Keys
 const RAZORPAY_KEY_ID = "rzp_live_YOUR_KEY_ID"; // Replace with your Razorpay Key ID
