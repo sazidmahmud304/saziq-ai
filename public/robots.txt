@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://saziq-ai.vercel.app/sitemap.xml
