@@ -48,10 +48,14 @@ module.exports = async function handler(req, res) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             // ✅ FIX: system_instruction format updated
-            systemInstruction: {
-              role: "system",
-              parts: [{ text: system }]
-            },
+            const geminiContents = [
+  {
+    role: "user",
+    parts: [
+      { text: system + "\n\n" + messages.map(m => m.content).join("\n") }
+    ]
+  }
+];
             contents: geminiContents,
             generationConfig: {
               maxOutputTokens: 2000,
