@@ -1,4 +1,5 @@
-// api/analyze.js — Google Gemini API (Updated for latest models)
+// api/analyze.js — Google Gemini API (Free: 1500 requests/day)
+// Free key at: aistudio.google.com
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -30,59 +31,44 @@ module.exports = async function handler(req, res) {
       parts: [{ text: String(msg.content) }]
     }));
 
-    // ✅ Updated models (latest working priority)
+    // Try models in order until one works
     const models = [
       "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-1.5-flash-latest"
+      "gemini-2.0-flash-lite",
+      "gemini-1.5-flash-latest",
+      "gemini-pro"
     ];
 
     let lastError = "";
     for (const model of models) {
       try {
-        // ✅ FIX: Updated endpoint (v1 instead of v1beta)
-        const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
         const response = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            // ✅ FIX: system_instruction format updated
-            const geminiContents = [
-  {
-    role: "user",
-    parts: [
-      { text: system + "\n\n" + messages.map(m => m.content).join("\n") }
-    ]
-  }
-];
+            system_instruction: { parts: [{ text: system }] },
             contents: geminiContents,
-            generationConfig: {
-              maxOutputTokens: 2000,
-              temperature: 0.7
-            }
+            generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
           }),
         });
 
         if (!response.ok) {
           const errText = await response.text();
           lastError = `${model}: ${response.status} ${errText.slice(0, 100)}`;
-          continue;
+          continue; // try next model
         }
 
         const data = await response.json();
-
-        // ✅ FIX: safer response parsing
-        const text =
-          data?.candidates?.[0]?.content?.parts
-            ?.map(p => p.text)
-            .join("") || "";
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
         if (!text) {
           lastError = `${model}: empty response`;
           continue;
         }
 
+        // Success — return in Anthropic-compatible format
         return res.status(200).json({
           content: [{ type: "text", text }]
         });
@@ -93,6 +79,7 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // All models failed
     return res.status(500).json({
       error: "All Gemini models failed. Last error: " + lastError
     });
