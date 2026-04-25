@@ -11,7 +11,7 @@ const PRICE_PRO_YEARLY   = 599900; // ₹5999/year (save 33%)
 const PRICE_TEAM_MONTHLY = 149900; // ₹1499/month
 const PRICE_TEAM_YEARLY  = 119900; // ₹1199/year
 // Google OAuth — get from console.cloud.google.com → Create project → OAuth 2.0 Client ID
-const GOOGLE_CLIENT_ID = "981626946613-aqr3v8biat79q4r1qcf5u46hqis2didn.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 const BRAND = "SazIQ";
 const FREE_LIMIT = 5;
 
@@ -166,13 +166,18 @@ async function callAI(system, messages) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ system, messages, max_tokens: 1500 }),
   });
-  if (!r.ok) {
-    const errText = await r.text();
-    throw new Error(`API error ${r.status}: ${errText.slice(0, 300)}`);
+  const rawText = await r.text();
+  // If response is HTML it means the API route is not found on Vercel
+  if (rawText.trim().startsWith("<")) {
+    throw new Error("API route not found. Make sure api/analyze.js is in your GitHub repo root and Vercel has redeployed.");
   }
-  const d = await r.json();
-  // Handle both Anthropic response format and error passthrough
-  if (d.error) throw new Error(d.error);
+  let d;
+  try { d = JSON.parse(rawText); } catch(e) { throw new Error("Invalid response from server: " + rawText.slice(0, 100)); }
+  if (!r.ok || d.error) {
+    const msg = d.error || "API error " + r.status;
+    if (r.status === 429) throw new Error("⏳ Too many requests. Wait 30 seconds and try again.");
+    throw new Error(msg);
+  }
   return d.content?.map(b => b.text || "").join("") || "";
 }
 
@@ -508,7 +513,7 @@ function Dashboard({ allText, columns, rows, C, isMobile }) {
 Replace the example data with REAL data from the document. Use actual column names and numbers you find.`;
       const reply=await callAI(
         "You are a data analyst. Extract data and return ONLY a valid JSON array of chart objects. No markdown, no explanation, just the JSON array.",
-        [{role:"user",content:`${prompt}\n\nDOCUMENT DATA:\n${allText.slice(0,8000)}`}]
+        [{role:"user",content:`${prompt}\n\nDATA:\n${allText.slice(0,3000)}`}]
       );
       const clean=reply.replace(/```json|```/g,"").replace(/```/g,"").trim();
       let parsed;
@@ -616,14 +621,14 @@ Be concise and data-specific. Extract real numbers from the provided data.`;
       // Call 1: text analysis
       const textReply=await callAI(
         `You are a senior financial analyst. The user has uploaded a document. Analyze it for ${item.label} and respond with a detailed forecast report in markdown format.`,
-        [{role:"user",content:`${textPrompt}\n\nDOCUMENT DATA:\n${allText.slice(0,8000)}`}]
+        [{role:"user",content:`${textPrompt}\n\nDATA:\n${allText.slice(0,3000)}`}]
       );
       // Call 2: chart data (non-blocking)
       let jsonReply="{}";
       try{
         jsonReply=await callAI(
           "You are a data analyst. Extract numeric data and return ONLY a JSON object. No markdown, no explanation, just valid JSON.",
-          [{role:"user",content:`${jsonPrompt}\n\nDOCUMENT DATA:\n${allText.slice(0,6000)}`}]
+          [{role:"user",content:`${jsonPrompt}\n\nDATA:\n${allText.slice(0,2500)}`}]
         );
       }catch(je){ /* chart optional */ }
 
@@ -1305,8 +1310,9 @@ function MainApp({ user: init, onLogout, C, themeName, setThemeName }) {
     }
     setBusy(true);setModeResults(prev=>({...prev,[mode]:null}));
     try{
-      const sys=`You are SazIQ, a professional document intelligence assistant by Sazid Mahmud. Use markdown formatting.\n\nDOCUMENTS:\n${allText.slice(0,12000)}`;
-      const reply=await callAI(sys,[{role:"user",content:PROMPTS[mode]}]);
+      const sys=`You are SazIQ, an AI document assistant. Be concise and use markdown formatting.`;
+      const userMsg=`${PROMPTS[mode]}\n\n===DOCUMENT===\n${allText.slice(0,3500)}`;
+      const reply=await callAI(sys,[{role:"user",content:userMsg}]);
       setModeResults(prev=>({...prev,[mode]:{text:reply}}));
       setSessions(prev=>[{files:entries.map(e=>e.file.name).join(", "),time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),mode},...prev.slice(0,19)]);
       // Track usage
