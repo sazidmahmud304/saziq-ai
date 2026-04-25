@@ -11,9 +11,7 @@ module.exports = async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({
-      error: "GEMINI_API_KEY not set in Vercel Environment Variables"
-    });
+    return res.status(500).json({ error: "GEMINI_API_KEY not set in Vercel Environment Variables" });
   }
 
   try {
@@ -31,60 +29,46 @@ module.exports = async function handler(req, res) {
       parts: [{ text: String(msg.content) }]
     }));
 
-    // Try models in order until one works
-    const models = [
-      "gemini-2.0-flash",
-      "gemini-2.0-flash-lite",
-      "gemini-1.5-flash-latest",
-      "gemini-pro"
-    ];
+    // Use v1 (stable) not v1beta — works with all current Gemini models
+    // gemini-2.0-flash is free and fast
+    const model = "gemini-2.0-flash";
+    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
-    let lastError = "";
-    for (const model of models) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: system }] },
-            contents: geminiContents,
-            generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
-          }),
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          lastError = `${model}: ${response.status} ${errText.slice(0, 100)}`;
-          continue; // try next model
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: system }] },
+        contents: geminiContents,
+        generationConfig: {
+          maxOutputTokens: 2000,
+          temperature: 0.7
         }
+      }),
+    });
 
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-        if (!text) {
-          lastError = `${model}: empty response`;
-          continue;
-        }
-
-        // Success — return in Anthropic-compatible format
-        return res.status(200).json({
-          content: [{ type: "text", text }]
-        });
-
-      } catch (modelErr) {
-        lastError = `${model}: ${modelErr.message}`;
-        continue;
-      }
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini error:", response.status, errText.slice(0, 300));
+      return res.status(response.status).json({
+        error: "Gemini API error " + response.status + ": " + errText.slice(0, 400)
+      });
     }
 
-    // All models failed
-    return res.status(500).json({
-      error: "All Gemini models failed. Last error: " + lastError
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    if (!text) {
+      return res.status(500).json({ error: "Empty response from Gemini. Try again." });
+    }
+
+    // Return in Anthropic-compatible format — App.jsx works without any changes
+    return res.status(200).json({
+      content: [{ type: "text", text }]
     });
 
   } catch (err) {
+    console.error("Server error:", err.message);
     return res.status(500).json({ error: "Server error: " + err.message });
   }
 };
