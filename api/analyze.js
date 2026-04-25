@@ -16,21 +16,35 @@ module.exports = async function handler(req, res) {
 
   try {
     const body = req.body || {};
-    const system = body.system || "You are a helpful AI assistant.";
+    const system = body.system || "";
     const messages = body.messages || [];
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: "messages array is required" });
     }
 
-    // Convert to Gemini format
-    const geminiContents = messages.map(msg => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: String(msg.content) }]
-    }));
+    // Inject system prompt as first user message (works on all Gemini versions)
+    const geminiContents = [];
 
-    // Use v1 (stable) not v1beta — works with all current Gemini models
-    // gemini-2.0-flash is free and fast
+    if (system) {
+      geminiContents.push({
+        role: "user",
+        parts: [{ text: "INSTRUCTIONS: " + system }]
+      });
+      geminiContents.push({
+        role: "model",
+        parts: [{ text: "Understood. I will follow these instructions." }]
+      });
+    }
+
+    // Add actual conversation messages
+    for (const msg of messages) {
+      geminiContents.push({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: String(msg.content) }]
+      });
+    }
+
     const model = "gemini-2.0-flash";
     const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
@@ -38,7 +52,6 @@ module.exports = async function handler(req, res) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: system }] },
         contents: geminiContents,
         generationConfig: {
           maxOutputTokens: 2000,
@@ -49,7 +62,6 @@ module.exports = async function handler(req, res) {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Gemini error:", response.status, errText.slice(0, 300));
       return res.status(response.status).json({
         error: "Gemini API error " + response.status + ": " + errText.slice(0, 400)
       });
@@ -62,13 +74,12 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: "Empty response from Gemini. Try again." });
     }
 
-    // Return in Anthropic-compatible format — App.jsx works without any changes
+    // Return in Anthropic-compatible format so App.jsx works unchanged
     return res.status(200).json({
       content: [{ type: "text", text }]
     });
 
   } catch (err) {
-    console.error("Server error:", err.message);
     return res.status(500).json({ error: "Server error: " + err.message });
   }
 };
