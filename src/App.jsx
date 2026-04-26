@@ -11,7 +11,7 @@ const PRICE_PRO_YEARLY   = 599900; // ₹5999/year (save 33%)
 const PRICE_TEAM_MONTHLY = 149900; // ₹1499/month
 const PRICE_TEAM_YEARLY  = 119900; // ₹1199/year
 // Google OAuth — get from console.cloud.google.com → Create project → OAuth 2.0 Client ID
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "625257296232-5uc3m8r81dsb4re62ivtmh52bam559pd.apps.googleusercontent.com";
 const BRAND = "SazIQ";
 const FREE_LIMIT = 5;
 
