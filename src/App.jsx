@@ -11,7 +11,7 @@ const PRICE_PRO_YEARLY   = 599900; // ₹5999/year (save 33%)
 const PRICE_TEAM_MONTHLY = 149900; // ₹1499/month
 const PRICE_TEAM_YEARLY  = 119900; // ₹1199/year
 // Google OAuth — get from console.cloud.google.com → Create project → OAuth 2.0 Client ID
-const GOOGLE_CLIENT_ID = "625257296232-5uc3m8r81dsb4re62ivtmh52bam559pd.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 const BRAND = "SazIQ";
 const FREE_LIMIT = 5;
 
@@ -444,6 +444,8 @@ function KpiCards({ kpis, C }) {
 
 function ChartWidget({ chart, C, columns, rows, onUpdate, onRemove }) {
   const [editing,setEditing]=useState(false);
+  const {isMobile} = useBreakpoint();
+
   const renderChart=()=>{
     const{type,labels,datasets,value,label}=chart;
     if(!labels?.length&&type!=="gauge") return<div style={{color:C.txtS,fontSize:12,textAlign:"center",padding:"20px"}}>No data</div>;
@@ -456,39 +458,134 @@ function ChartWidget({ chart, C, columns, rows, onUpdate, onRemove }) {
     if(type==="gauge") return<GaugeChart value={value} label={label} C={C}/>;
     return null;
   };
+
+  const selStyle = {
+    background:C.card,
+    border:`1px solid ${C.border}`,
+    borderRadius:8,
+    padding:"10px 12px",
+    color:C.txt,
+    fontSize:14,
+    width:"100%",
+    WebkitAppearance:"auto",
+    appearance:"auto",
+  };
+
+  const applyAxes = () => {
+    const xC = chart.xCol||columns[0];
+    const yC = chart.yCol||columns[1];
+    const lbls = rows.slice(0,20).map(r=>String(r[xC]??"")).filter(Boolean);
+    const vals = rows.slice(0,20).map(r=>Number(r[yC])||0);
+    onUpdate({...chart,labels:lbls,datasets:[{label:yC,data:vals}]});
+  };
+
   return(
     <div style={{background:C.card2,border:`1px solid ${C.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+      {/* Header */}
       <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",background:C.card}}>
-        <div><div style={{fontSize:12.5,fontWeight:700,color:C.txt}}>{chart.title||"Chart"}</div><div style={{fontSize:10,color:C.txtS,fontFamily:"monospace"}}>{chart.type?.toUpperCase()}</div></div>
-        <div style={{display:"flex",gap:5}}>
-          <button onClick={()=>setEditing(e=>!e)} style={{background:editing?`${C.acc}20`:"none",border:`1px solid ${editing?C.acc:C.border}`,color:editing?C.acc:C.txtS,padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600}}>⚙ Edit</button>
-          <button onClick={onRemove} style={{background:"none",border:`1px solid ${C.border}`,color:C.txtD,padding:"4px 10px",borderRadius:6,fontSize:13}} onMouseEnter={e=>e.currentTarget.style.color=C.red} onMouseLeave={e=>e.currentTarget.style.color=C.txtD}>×</button>
+        <div style={{minWidth:0,flex:1,marginRight:8}}>
+          <div style={{fontSize:12.5,fontWeight:700,color:C.txt,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{chart.title||"Chart"}</div>
+          <div style={{fontSize:10,color:C.txtS,fontFamily:"monospace"}}>{chart.type?.toUpperCase()}</div>
+        </div>
+        <div style={{display:"flex",gap:6,flexShrink:0}}>
+          <button
+            onClick={()=>setEditing(e=>!e)}
+            style={{
+              background:editing?`${C.acc}20`:"none",
+              border:`1px solid ${editing?C.acc:C.border}`,
+              color:editing?C.acc:C.txtS,
+              padding:isMobile?"8px 12px":"5px 11px",
+              borderRadius:7,
+              fontSize:isMobile?13:11,
+              fontWeight:600,
+              minWidth:isMobile?44:undefined,
+              minHeight:isMobile?36:undefined,
+              display:"flex",alignItems:"center",justifyContent:"center",
+            }}>⚙{!isMobile&&" Edit"}</button>
+          <button
+            onClick={onRemove}
+            style={{
+              background:"none",
+              border:`1px solid ${C.border}`,
+              color:C.txtD,
+              padding:isMobile?"8px 12px":"5px 10px",
+              borderRadius:7,
+              fontSize:isMobile?16:13,
+              minWidth:isMobile?44:undefined,
+              minHeight:isMobile?36:undefined,
+              display:"flex",alignItems:"center",justifyContent:"center",
+            }}
+            onMouseEnter={e=>e.currentTarget.style.color=C.red}
+            onMouseLeave={e=>e.currentTarget.style.color=C.txtD}>×</button>
         </div>
       </div>
-      {editing&&columns.length>0&&(
-        <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border}`,background:C.bg2,display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{fontSize:11,color:C.txtS,fontFamily:"monospace",letterSpacing:.7}}>CUSTOMIZE AXES</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {[["X AXIS (Labels)","xCol"],["Y AXIS (Values)","yCol"]].map(([lbl,k])=>(
-              <div key={k} style={{display:"flex",flexDirection:"column",gap:4,flex:1,minWidth:120}}>
-                <label style={{fontSize:10,color:C.txtS,fontFamily:"monospace"}}>{lbl}</label>
-                <select value={chart[k]||""} onChange={e=>onUpdate({...chart,[k]:e.target.value})} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"7px 10px",color:C.txt,fontSize:12}}>
-                  <option value="">Auto</option>{columns.map(c=><option key={c} value={c}>{c}</option>)}
+
+      {/* Edit Panel — fully responsive */}
+      {editing&&(
+        <div style={{padding:"14px",borderBottom:`1px solid ${C.border}`,background:C.bg2,display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{fontSize:11,color:C.txtS,fontFamily:"monospace",letterSpacing:.7,fontWeight:700}}>⚙ CUSTOMIZE CHART</div>
+
+          {/* Chart Type — always full width on mobile */}
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <label style={{fontSize:11,color:C.txtS,fontFamily:"monospace",fontWeight:600}}>CHART TYPE</label>
+            <select
+              value={chart.type}
+              onChange={e=>onUpdate({...chart,type:e.target.value})}
+              style={selStyle}>
+              {["bar","line","pie","area","scatter","gauge"].map(t=>(
+                <option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* X and Y axis — stack vertically on mobile */}
+          {columns.length>0&&(
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:10}}>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                <label style={{fontSize:11,color:C.txtS,fontFamily:"monospace",fontWeight:600}}>X AXIS (Labels)</label>
+                <select
+                  value={chart.xCol||""}
+                  onChange={e=>onUpdate({...chart,xCol:e.target.value})}
+                  style={selStyle}>
+                  <option value="">Auto</option>
+                  {columns.map(c=><option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-            ))}
-            <div style={{display:"flex",flexDirection:"column",gap:4,flex:1,minWidth:100}}>
-              <label style={{fontSize:10,color:C.txtS,fontFamily:"monospace"}}>CHART TYPE</label>
-              <select value={chart.type} onChange={e=>onUpdate({...chart,type:e.target.value})} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"7px 10px",color:C.txt,fontSize:12}}>
-                {["bar","line","pie","area","scatter","gauge"].map(t=><option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
-              </select>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                <label style={{fontSize:11,color:C.txtS,fontFamily:"monospace",fontWeight:600}}>Y AXIS (Values)</label>
+                <select
+                  value={chart.yCol||""}
+                  onChange={e=>onUpdate({...chart,yCol:e.target.value})}
+                  style={selStyle}>
+                  <option value="">Auto</option>
+                  {columns.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Apply button — full width on mobile for easy tapping */}
           {(chart.xCol||chart.yCol)&&rows.length>0&&(
-            <button onClick={()=>{const xC=chart.xCol||columns[0],yC=chart.yCol||columns[1];const lbls=rows.slice(0,20).map(r=>String(r[xC]??"")).filter(Boolean);const vals=rows.slice(0,20).map(r=>Number(r[yC])||0);onUpdate({...chart,labels:lbls,datasets:[{label:yC,data:vals}]});}} style={{background:`${C.acc}18`,border:`1px solid ${C.acc}30`,color:C.acc,padding:"7px 16px",borderRadius:8,fontSize:12,fontWeight:700,alignSelf:"flex-start"}}>↻ Apply</button>
+            <button
+              onClick={applyAxes}
+              style={{
+                background:`linear-gradient(135deg,${C.acc},${C.acc2})`,
+                border:"none",
+                color:"#fff",
+                padding:isMobile?"13px":"9px 18px",
+                borderRadius:9,
+                fontSize:isMobile?14:12,
+                fontWeight:700,
+                width:isMobile?"100%":"auto",
+                alignSelf:isMobile?"stretch":"flex-start",
+                cursor:"pointer",
+              }}>
+              ↻ Apply Changes
+            </button>
           )}
         </div>
       )}
+
       <div style={{padding:"14px 10px",flex:1}}>{renderChart()}</div>
     </div>
   );
