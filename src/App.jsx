@@ -1326,8 +1326,7 @@ Extract the most critical numbers, statistics, dates, and factual information in
 ## ✅ Conclusions & Takeaways
 What are the main conclusions? What decisions or actions does this document support or suggest?
 
-${src.includes('entries.length > 1') ? '## 🔗 Cross-Document Summary
-If multiple documents are provided, summarize how they relate to each other.' : ''}
+## Cross-Document Summary\nIf multiple files are uploaded, explain how they relate to each other.
 
 Be specific. Use actual data from the document. Format cleanly.`,
 
