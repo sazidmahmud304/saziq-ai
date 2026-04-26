@@ -6,9 +6,9 @@ const OWNER_API_KEY = "ANTHROPIC_API_KEY";
 // Get your Key ID from: razorpay.com → Settings → API Keys
 const RAZORPAY_KEY_ID = "rzp_live_YOUR_KEY_ID"; // Replace with your Razorpay Key ID
 // Prices in INR paise (1 rupee = 100 paise)
-const PRICE_PRO_MONTHLY  = 74900;  // ₹449/month
+const PRICE_PRO_MONTHLY  = 74900;  // ₹749/month
 const PRICE_PRO_YEARLY   = 599900; // ₹5999/year (save 33%)
-const PRICE_TEAM_MONTHLY = 149900; // ₹799/month
+const PRICE_TEAM_MONTHLY = 149900; // ₹1499/month
 const PRICE_TEAM_YEARLY  = 119900; // ₹1199/year
 // Google OAuth — get from console.cloud.google.com → Create project → OAuth 2.0 Client ID
 const GOOGLE_CLIENT_ID = "625257296232-5uc3m8r81dsb4re62ivtmh52bam559pd.apps.googleusercontent.com";
