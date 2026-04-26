@@ -827,7 +827,7 @@ function ModeView({ mode, result, onRun, busy, question, setQuestion, C, isMobil
           <div style={{fontSize:44,marginBottom:14}}>📊</div>
           <div style={{fontSize:18,fontWeight:800,color:C.txt,marginBottom:8}}>Power BI Style Dashboard</div>
           <div style={{fontSize:13.5,color:C.txtS,marginBottom:24,maxWidth:400,margin:"0 auto 24px"}}>Create multiple interactive charts. Customize X/Y axes, switch chart types, build a full analytics dashboard.</div>
-          <button onClick={()=>onRun("chart")} style={{background:`linear-gradient(135deg,${C.purple},${C.acc})`,border:"none",borderRadius:11,padding:"13px 32px",color:"#fff",fontWeight:800,fontSize:15,boxShadow:`0 4px 20px ${C.purple}40`}}>📊 Open Dashboard</button>
+          <button onClick={()=>onRun("chart")} style={{background:`linear-gradient(135deg,${C.purple},${C.acc})`,border:"none",borderRadius:11,padding:"13px 32px",color:"#fff",fontWeight:800,fontSize:15,boxShadow:`0 4px 20px ${C.purple}40`}}>📊 Create Dashboard</button>
         </div>
       )}
     </div>
@@ -1072,7 +1072,8 @@ function AuthScreen({ onAuth, C, themeName, setThemeName }) {
               <span style={{fontSize:10,background:`${C.acc}20`,color:C.acc,border:`1px solid ${C.acc}30`,borderRadius:5,padding:"2px 8px",fontFamily:"monospace",letterSpacing:1}}>AI</span>
             </div>
             <div style={{fontSize:isDesktop?44:34,fontWeight:900,color:C.txt,lineHeight:1.1,letterSpacing:-1.2,marginBottom:16}}>
-              Your documents,<br/><span style={{background:`linear-gradient(90deg,${C.acc},${C.acc2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>now intelligent</span>
+              Your documents,<br/>
+              <span key={themeName} style={{background:`linear-gradient(90deg,${C.acc},${C.acc2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",display:"inline-block"}}>now intelligent</span>
             </div>
             <div style={{fontSize:15,color:C.txtS,lineHeight:1.7,maxWidth:400,marginBottom:40}}>Upload PDF, Excel, CSV or any file. Summarize, extract, visualize and forecast — powered by Claude AI.</div>
             {[["📂","PDF, Excel, CSV, TXT, JSON & more"],["📊","Power BI style analytics dashboard"],["📈","AI Forecast with charts & analysis"]].map(([i,t])=>(
@@ -1492,7 +1493,11 @@ Rate overall risk level: 🔴 High / 🟡 Medium / 🟢 Low`,
 
   const runMode=async(mode,forecastResult=null)=>{
     if(!allReady||busy)return;
-    if(mode==="chart"){setModeResults(prev=>({...prev,chart:{dashboard:true}}));return;}
+    if(mode==="chart"){
+      // Only open dashboard if not already open (preserve existing dashboard)
+      setModeResults(prev=>({...prev,chart:prev.chart||{dashboard:true}}));
+      return;
+    }
     if(mode==="forecast"&&forecastResult){setModeResults(prev=>({...prev,forecast:{prediction:forecastResult}}));return;}
     if(mode==="forecast"||(mode==="qa"&&!question))return;
     // Check free limit
@@ -1696,7 +1701,7 @@ Rate overall risk level: 🔴 High / 🟡 Medium / 🟢 Low`,
 export default function Root() {
   const [user,setUser]=useState(()=>AuthDB.loadSession());
   const [themeName,setThemeName]=useState(()=>{
-    try{return localStorage.getItem("saziq_theme")||"dark";}catch{return "dark";}
+    try{return localStorage.getItem("saziq_theme")||"light";}catch{return "light";}
   });
   const C=THEMES[themeName]||THEMES.dark;
 
@@ -1711,7 +1716,7 @@ export default function Root() {
   };
 
   return(
-    <>{<style>{makeGS(C)}</style>}
+    <><style key={themeName}>{makeGS(C)}</style>
       {!user
         ?<AuthScreen onAuth={setUser} C={C} themeName={themeName} setThemeName={handleTheme}/>
         :<MainApp user={user} onLogout={handleLogout} C={C} themeName={themeName} setThemeName={handleTheme}/>
