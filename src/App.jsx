@@ -503,14 +503,21 @@ function Dashboard({ allText, columns, rows, C, isMobile }) {
   const generateCharts=async()=>{
     setBusy(true);setErr("");
     try{
-      const prompt=`Analyze this document and return ONLY a valid JSON array. No markdown, no explanation, just the JSON array:
+      const prompt=`Analyze the document data and return ONLY a valid JSON array of 4 chart objects. No markdown, no text, just pure JSON.
+
+Rules:
+- Use REAL column names and REAL numbers from the document
+- Choose chart types that best show the data (bar for comparisons, line for trends, pie for distributions)
+- Give each chart a clear descriptive title
+- Use meaningful labels
+
+Return exactly this format:
 [
-  {"type":"bar","title":"Category Comparison","labels":["A","B","C","D"],"datasets":[{"label":"Values","data":[10,20,15,25]}]},
-  {"type":"line","title":"Trend Over Time","labels":["Jan","Feb","Mar","Apr","May"],"datasets":[{"label":"Metric","data":[5,10,8,15,12]}]},
-  {"type":"pie","title":"Distribution","labels":["Item1","Item2","Item3"],"datasets":[{"label":"Share","data":[40,35,25]}]},
-  {"type":"bar","title":"Period Comparison","labels":["Q1","Q2","Q3","Q4"],"datasets":[{"label":"Amount","data":[100,150,120,180]}]}
-]
-Replace the example data with REAL data from the document. Use actual column names and numbers you find.`;
+  {"type":"bar","title":"Descriptive Title Here","labels":["Label1","Label2","Label3","Label4"],"datasets":[{"label":"Series Name","data":[10,25,18,30]}]},
+  {"type":"line","title":"Trend Over Time","labels":["Period1","Period2","Period3","Period4","Period5"],"datasets":[{"label":"Metric","data":[5,10,8,15,12]}]},
+  {"type":"pie","title":"Distribution Breakdown","labels":["Category1","Category2","Category3"],"datasets":[{"label":"Share","data":[40,35,25]}]},
+  {"type":"bar","title":"Comparison Analysis","labels":["Item1","Item2","Item3","Item4"],"datasets":[{"label":"Value","data":[100,150,120,180]}]}
+]`;
       const reply=await callAI(
         "You are a data analyst. Extract data and return ONLY a valid JSON array of chart objects. No markdown, no explanation, just the JSON array.",
         [{role:"user",content:`${prompt}\n\nDATA:\n${allText.slice(0,3000)}`}]
@@ -594,29 +601,43 @@ function ForecastMode({ allText, C, isMobile, result, onResult }) {
 "chart":{"title":"${item.label}: Current vs Forecast (${timeframe})","yLabel":"Value","labels":["P1","P2","P3","P4","P5","P6","P7","P8"],"actual":[100,110,108,125,120],"forecast":[120,130,140,152,162,175],"best":[128,142,154,168,180,196],"worst":[112,118,124,128,132,140]}}
 Use real numbers from data if available. Make labels match actual time periods.`;
 
-      const textPrompt=`You are a senior financial analyst. Write a concise ${item.label} for the next ${timeframe}.
+      const textPrompt=`You are a senior financial analyst and business consultant. Produce a professional ${item.label} report for the next ${timeframe} based on the provided data.
 
-## Executive Summary
-2-3 sentences with key numbers and outlook.
+## 📈 Executive Summary
+Write 3-4 sentences summarizing the current situation and forecast outlook. Include specific numbers from the data.
 
-## Current Baseline
-Key current metrics with specific numbers.
+## 📊 Current Baseline Metrics
+Extract and list the key current metrics from the data:
+- Current revenue / profit / loss / investment (use actual numbers)
+- Growth trend (past performance)
+- Key performance indicators
 
-## Projections
-- **Likely scenario:** X% growth → reaching $X
-- **Best case:** X% growth → $X  
-- **Worst case:** X% decline → $X
+## 🔮 Forecast Projections (${timeframe})
 
-## Key Drivers
-3-4 bullet points explaining forecast drivers.
+| Scenario | Projected Value | Growth Rate | Confidence |
+|----------|----------------|-------------|------------|
+| 🟢 Best Case | $X | +X% | X% |
+| 🟡 Likely Case | $X | +X% | X% |
+| 🔴 Worst Case | $X | -X% | X% |
 
-## Confidence & Risks
-Confidence level and top 3 risks.
+## ⚡ Key Growth Drivers
+1. [First driver with specific detail]
+2. [Second driver with specific detail]
+3. [Third driver with specific detail]
 
-## Recommendations
-3 specific actions to improve outcomes.
+## ⚠️ Risk Factors
+- **High Risk:** [specific risk]
+- **Medium Risk:** [specific risk]
+- **Low Risk:** [specific risk]
 
-Be concise and data-specific. Extract real numbers from the provided data.`;
+**Overall Confidence Level:** X% — [brief explanation]
+
+## ✅ Strategic Recommendations
+1. [Specific action with expected impact]
+2. [Specific action with expected impact]
+3. [Specific action with expected impact]
+
+Use REAL numbers from the document wherever possible. If data is limited, make reasonable estimates and clearly mark them as estimates.`;
 
       // Call 1: text analysis
       const textReply=await callAI(
@@ -1291,11 +1312,86 @@ function MainApp({ user: init, onLogout, C, themeName, setThemeName }) {
   ];
 
   const PROMPTS={
-    summarize:"Summarize all documents. For each: 1) 2-sentence overview, 2) Key bullet points, 3) Conclusions. Then a cross-document summary if multiple files.",
-    qa:question||"What are the main topics?",
-    extract:"Extract all structured data: names, dates, numbers, monetary values, key facts, action items. Format by labeled categories.",
-    compare:"Compare all documents: key similarities, key differences, conflicting info, patterns.",
-    risks:"Scan for risks, red flags, anomalies, missing info, problems. Be specific with examples.",
+    summarize:`Analyze the uploaded document(s) and produce a professional executive summary report.
+
+## 📋 Document Overview
+Provide a clear 3-4 sentence overview of what this document is about, its purpose, and who it is for.
+
+## 🔑 Key Findings
+List the 5-7 most important findings, insights, or points from the document. Use specific numbers, names, and data from the document — not vague statements.
+
+## 📊 Important Data & Facts
+Extract the most critical numbers, statistics, dates, and factual information in a clean list.
+
+## ✅ Conclusions & Takeaways
+What are the main conclusions? What decisions or actions does this document support or suggest?
+
+${src.includes('entries.length > 1') ? '## 🔗 Cross-Document Summary
+If multiple documents are provided, summarize how they relate to each other.' : ''}
+
+Be specific. Use actual data from the document. Format cleanly.`,
+
+    qa:question||"What are the main topics covered in this document? Please provide a detailed and structured answer.",
+
+    extract:`Extract all structured data from the document and organize it professionally.
+
+## 👤 People & Organizations
+All names, companies, organizations, roles, and titles mentioned.
+
+## 📅 Dates & Timelines
+All dates, deadlines, periods, and time-related information in chronological order.
+
+## 💰 Numbers & Financial Data
+All monetary values, percentages, quantities, metrics, and statistics.
+
+## 📍 Locations & Contact Info
+Addresses, locations, emails, phone numbers, websites.
+
+## ✅ Action Items & Decisions
+Any tasks, to-dos, decisions made, or next steps mentioned.
+
+## 📌 Key Facts & Terms
+Important terms, definitions, clauses, or facts that stand out.
+
+Be exhaustive. Extract everything. Present clearly in the sections above.`,
+
+    compare:`Compare all uploaded documents professionally and produce a structured comparison report.
+
+## 📊 Comparison Overview
+Brief overview of what documents are being compared and why.
+
+## ✅ Key Similarities
+What do these documents agree on or have in common? List specific points.
+
+## ❌ Key Differences
+Where do they differ? Be specific — use actual data from each document.
+
+## ⚡ Conflicting Information
+Highlight any contradictions or conflicts between the documents.
+
+## 🏆 Summary Verdict
+Which document is more comprehensive / accurate / useful and why?
+
+Use a table format where helpful for side-by-side comparison.`,
+
+    risks:`Perform a professional risk analysis on the uploaded document(s).
+
+## ⚠️ Critical Risks (High Priority)
+List the most serious risks, problems, or red flags found. Be specific with quotes or data from the document.
+
+## 🔶 Moderate Risks (Medium Priority)  
+Issues that need attention but are not immediately critical.
+
+## 🔷 Minor Issues (Low Priority)
+Small gaps, inconsistencies, or areas for improvement.
+
+## 📉 Missing Information
+What important information is absent that should be present?
+
+## 🛡️ Recommendations
+Specific actions to address each risk category.
+
+Rate overall risk level: 🔴 High / 🟡 Medium / 🟢 Low`,
   };
 
   const runMode=async(mode,forecastResult=null)=>{
@@ -1310,7 +1406,7 @@ function MainApp({ user: init, onLogout, C, themeName, setThemeName }) {
     }
     setBusy(true);setModeResults(prev=>({...prev,[mode]:null}));
     try{
-      const sys=`You are SazIQ, an AI document assistant. Be concise and use markdown formatting.`;
+      const sys=`You are SazIQ, a world-class AI document analyst. You produce highly professional, well-structured reports that executives and business professionals rely on. Always use clear markdown formatting with headers, bullet points, bold key terms, and numbered lists where appropriate. Be specific — use actual numbers, names, and data from the document. Never give vague generic answers. Structure every response so it is easy to scan and act on.`;
       const userMsg=`${PROMPTS[mode]}\n\n===DOCUMENT===\n${allText.slice(0,3500)}`;
       const reply=await callAI(sys,[{role:"user",content:userMsg}]);
       setModeResults(prev=>({...prev,[mode]:{text:reply}}));
